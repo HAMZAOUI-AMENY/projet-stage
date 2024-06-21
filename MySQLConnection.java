@@ -4,10 +4,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+
 public class MySQLConnection {
     // JDBC URL, username, and password of MySQL server
     private static final String URL = "jdbc:mysql://localhost:3306/evenements";
-    private static final String USER = "ameny";
+    private static final String USER = "root";
     private static final String PASSWORD = "Mysql24";
 
     // JDBC variables for opening and managing connection
@@ -20,9 +21,10 @@ public class MySQLConnection {
 
             // Open a connection
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
-
+ 
             // Example: Insert data
-            insertData("1234", "2024-06-18", "entrée", "ABC123", "Magasin");
+            insertData("1234", "2024-06-18 14:52", "entrée", "ABC123", "Magasin");
+            insertData("3456", "2023-06-19", "SORTIE", "23456463544", "DIV INFO");
 
             // Example: Retrieve data
             retrieveData();
@@ -41,7 +43,7 @@ public class MySQLConnection {
     }
 
     private static void insertData(String userId, String date, String operationType, String barcode, String location) {
-        String insertQuery = "INSERT INTO votre_table (UserId, Date, OperationType, Barcode, Location) VALUES (?, ?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
             preparedStatement.setString(1, userId);
@@ -64,7 +66,7 @@ public class MySQLConnection {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                String userId = resultSet.getString("UserId");
+                String userId = resultSet.getString("User_Id");
                 String date = resultSet.getString("Date");
                 String operationType = resultSet.getString("OperationType");
                 String barcode = resultSet.getString("Barcode");
@@ -76,4 +78,5 @@ public class MySQLConnection {
             e.printStackTrace();
         }
     }
+    
 }
