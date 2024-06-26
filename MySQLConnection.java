@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
 public class MySQLConnection {
     // JDBC URL, username, and password of MySQL server
     private static final String URL = "jdbc:mysql://localhost:3306/evenements";
@@ -21,13 +20,21 @@ public class MySQLConnection {
 
             // Open a connection
             connection = DriverManager.getConnection(URL, USER, PASSWORD);
- 
+
             // Example: Insert data
             insertData("1234", "2024-06-18 14:52", "entrée", "ABC123", "Magasin");
-            insertData("3456", "2023-06-19", "SORTIE", "23456463544", "DIV INFO");
+            insertData("3427", "2023-06-18", "SORTIE", "23456463543", "DIV INFO");
 
             // Example: Retrieve data
             retrieveData();
+
+            // Example: Insert user
+            int username = 124232;
+            String nom = "ameny";
+            String profil = "admin";
+            String plainPassword = "EFS342";
+            String hashedPassword = PasswordUtil.hashPassword(plainPassword);
+            insertUser(username, nom, profil, hashedPassword);
 
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
@@ -59,6 +66,22 @@ public class MySQLConnection {
         }
     }
 
+    private static void insertUser(int username, String nom, String profil, String hashedPassword) {
+        String insertQuery = "INSERT INTO User (matricule, nom, profil, motdepasse) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            preparedStatement.setInt(1, username);
+            preparedStatement.setString(2, nom);
+            preparedStatement.setString(3, profil);
+            preparedStatement.setString(4, hashedPassword);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            System.out.println("Rows inserted: " + rowsAffected);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static void retrieveData() {
         String selectQuery = "SELECT * FROM operations";
 
@@ -67,9 +90,9 @@ public class MySQLConnection {
 
             while (resultSet.next()) {
                 String userId = resultSet.getString("User_Id");
-                String date = resultSet.getString("Date");
-                String operationType = resultSet.getString("OperationType");
-                String barcode = resultSet.getString("Barcode");
+                String date = resultSet.getString("DateOperation");
+                String operationType = resultSet.getString("TypeOperation");
+                String barcode = resultSet.getString("code_barres");
                 String location = resultSet.getString("Location");
 
                 System.out.println(userId + ", " + date + ", " + operationType + ", " + barcode + ", " + location);
@@ -78,5 +101,4 @@ public class MySQLConnection {
             e.printStackTrace();
         }
     }
-    
 }
