@@ -5,13 +5,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class MySQLConnection {
-    // JDBC URL, username, and password of MySQL server
     private static final String URL = "jdbc:mysql://localhost:3306/evenements";
     private static final String USER = "root";
     private static final String PASSWORD = "Mysql24";
-
-    // JDBC variables for opening and managing connection
     private static Connection connection;
+
+    public static Connection getConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+        }
+        return connection;
+    }
 
     public static void main(String[] args) {
         try {
@@ -19,23 +23,33 @@ public class MySQLConnection {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
             // Open a connection
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            connection = getConnection();
+            UserService userService = new UserService();
+            
+            if (userService.authenticateUser("omarr", "EFS342")) {
+                System.out.println("User " + UserSession.getInstance().getUsername() + " is logged in.");
 
-            // Example: Insert data
-            insertData("1234", "2024-06-18 14:52", "entrée", "ABC123", "Magasin");
-            insertData("3427", "2023-06-18", "SORTIE", "23456463543", "DIV INFO");
+                // Example: Insert data
+                insertData("2024-04-18 14:52", "entrée", "ABC123", "Magasin");
+                insertData("2023-05-18", "SORTIE", "23456463543", "DIV INFO");
 
-            // Example: Retrieve data
-            retrieveData();
+                // Example: Retrieve data
+                retrieveData();
 
-            // Example: Insert user
-            int username = 124232;
-            String nom = "ameny";
-            String profil = "admin";
-            String plainPassword = "EFS342";
-            String hashedPassword = PasswordUtil.hashPassword(plainPassword);
-            insertUser(username, nom, profil, hashedPassword);
+                // Example: Insert user
+                int matricule = 124232;
+                String nom = "omarr";
+                String profil = "admin";
+                String plainPassword = "EFS342";
+                String hashedPassword = PasswordUtil.hashPassword(plainPassword);
+                insertUser(matricule, nom, profil, hashedPassword);
 
+                // Log out
+                UserSession.getInstance().clearSession();
+                System.out.println("User session cleared.");
+            } else {
+                System.out.println("Authentication failed.");
+            }
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         } finally {
@@ -49,10 +63,11 @@ public class MySQLConnection {
         }
     }
 
-    private static void insertData(String userId, String date, String operationType, String barcode, String location) {
+    private static void insertData(String date, String operationType, String barcode, String location) {
         String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            String userId = UserSession.getInstance().getUsername();
             preparedStatement.setString(1, userId);
             preparedStatement.setString(2, date);
             preparedStatement.setString(3, operationType);
