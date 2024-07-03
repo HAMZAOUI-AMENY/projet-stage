@@ -16,4 +16,7 @@ public class PasswordUtil {
             return null;
         }
     }
+    public static boolean checkPassword(String plainTextPassword, String hashedPassword) {
+        return hashedPassword.equals(hashPassword(plainTextPassword));
+    }
 }

@@ -27,6 +27,9 @@ public class MySQLConnection {
             UserService userService = new UserService();
             
             if (userService.authenticateUser("omarr", "EFS342")) {
+                String username = "omarr";  // Doit être récupéré dynamiquement après l'authentification
+                UserSession session = new UserSession(username);
+                System.out.println("User " + session.getUsername() + " is logged in.");
                 System.out.println("User " + UserSession.getInstance().getUsername() + " is logged in.");
 
                 // Example: Insert data
@@ -63,7 +66,7 @@ public class MySQLConnection {
         }
     }
 
-    private static void insertData(String date, String operationType, String barcode, String location) {
+    public static void insertData(String date, String operationType, String barcode, String location) {
         String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
