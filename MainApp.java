@@ -1,56 +1,40 @@
-import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
+import java.util.Scanner;
 
 public class MainApp {
-
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Barcode Scanner App");
-        JTextField userIdField = new JTextField(10);
-        JTextField operationTypeField = new JTextField(10);
-        JTextField locationField = new JTextField(10);
-        JButton scanButton = new JButton("Scan Barcode");
+        
+        Scanner scanner = new Scanner(System.in);
 
-        // ActionListener pour le bouton de scan
-        scanButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Appel de la méthode pour scanner le code-barres
-                String barcode = BarcodeScannerApp.getScannedBarcode();
+        System.out.println("Enter your matricule:");
+        int matricule = Integer.parseInt(scanner.nextLine());
 
-                // Si le code-barres n'est pas vide, créer une nouvelle entrée de journal
-                if (!barcode.isEmpty()) {
-                    String userId = userIdField.getText();
-                    String operationType = operationTypeField.getText();
-                    String location = locationField.getText();
+        System.out.println("Enter your password:");
+        String password = scanner.nextLine();
 
-                    // Créer une nouvelle entrée de journal avec les données récupérées
-                    LogEntry entry = new LogEntry(userId, operationType, barcode, location);
+        UserService userService = new UserService();
 
-                    // Ajouter l'entrée de journal à la base de données
-                    MySQLConnection.insertData(entry.getUserId(), LocalDateTime.now().toString(), entry.getTypeOperation(), entry.getCodeBarres());
+        if (userService.authenticateUser(matricule, password)) {
+            UserSession session = UserSession.getInstance(matricule);
+            String profile = userService.getUserProfile(matricule);
 
+            System.out.println("User with matricule " + session.getMatricule() + " is logged in.");
 
-                    JOptionPane.showMessageDialog(frame, "Log entry added successfully.");
-                } else {
-                    JOptionPane.showMessageDialog(frame, "Please scan a barcode first.");
-                }
+            if ("admin".equalsIgnoreCase(profile)) {
+                AdminPage adminPage = new AdminPage();
+                adminPage.display();
+            } else if ("user".equalsIgnoreCase(profile)) {
+                UserPage userPage = new UserPage();
+                userPage.display();
+            } else {
+                System.out.println("Unknown profile: " + profile);
             }
-        });
 
-        JPanel panel = new JPanel();
-        panel.add(new JLabel("User ID:"));
-        panel.add(userIdField);
-        panel.add(new JLabel("Operation Type:"));
-        panel.add(operationTypeField);
-        panel.add(new JLabel("Location:"));
-        panel.add(locationField);
-        panel.add(scanButton);
+            session.clearSession();
+            System.out.println("User session cleared.");
+        } else {
+            System.out.println("Authentication failed.");
+        }
 
-        frame.add(panel);
-        frame.setSize(400, 200);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+        scanner.close();
     }
 }

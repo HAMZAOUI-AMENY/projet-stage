@@ -3,6 +3,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 public class MySQLConnection {
     private static final String URL = "jdbc:mysql://localhost:3306/evenements";
@@ -17,94 +18,12 @@ public class MySQLConnection {
         return connection;
     }
 
-    public static void main(String[] args) {
-        try {
-            // Register JDBC driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-
-            // Open a connection
-            connection = getConnection();
-            UserService userService = new UserService();
-            
-            if (userService.authenticateUser("omarr", "EFS342")) {
-                String username = "omarr";  // Doit être récupéré dynamiquement après l'authentification
-                UserSession session = new UserSession(username);
-                System.out.println("User " + session.getUsername() + " is logged in.");
-                System.out.println("User " + UserSession.getInstance().getUsername() + " is logged in.");
-
-                // Example: Insert data
-                insertData("2024-04-18 14:52", "entrée", "ABC123", "Magasin");
-                insertData("2023-05-18", "SORTIE", "23456463543", "DIV INFO");
-
-                // Example: Retrieve data
-                retrieveData();
-
-                // Example: Insert user
-                int matricule = 124232;
-                String nom = "omarr";
-                String profil = "admin";
-                String plainPassword = "EFS342";
-                String hashedPassword = PasswordUtil.hashPassword(plainPassword);
-                insertUser(matricule, nom, profil, hashedPassword);
-
-                // Log out
-                UserSession.getInstance().clearSession();
-                System.out.println("User session cleared.");
-            } else {
-                System.out.println("Authentication failed.");
-            }
-        } catch (ClassNotFoundException | SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void insertData(String date, String operationType, String barcode, String location) {
-        String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-            String userId = UserSession.getInstance().getUsername();
-            preparedStatement.setString(1, userId);
-            preparedStatement.setString(2, date);
-            preparedStatement.setString(3, operationType);
-            preparedStatement.setString(4, barcode);
-            preparedStatement.setString(5, location);
-
-            int rowsAffected = preparedStatement.executeUpdate();
-            System.out.println("Rows inserted: " + rowsAffected);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void insertUser(int username, String nom, String profil, String hashedPassword) {
-        String insertQuery = "INSERT INTO User (matricule, nom, profil, motdepasse) VALUES (?, ?, ?, ?)";
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-            preparedStatement.setInt(1, username);
-            preparedStatement.setString(2, nom);
-            preparedStatement.setString(3, profil);
-            preparedStatement.setString(4, hashedPassword);
-
-            int rowsAffected = preparedStatement.executeUpdate();
-            System.out.println("Rows inserted: " + rowsAffected);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void retrieveData() {
+    public static void retrieveData() {
         String selectQuery = "SELECT * FROM operations";
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(selectQuery)) {
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (Connection conn = getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement(selectQuery);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
 
             while (resultSet.next()) {
                 String userId = resultSet.getString("User_Id");
@@ -119,4 +38,54 @@ public class MySQLConnection {
             e.printStackTrace();
         }
     }
+
+    public static void retrieveDataByCodeBarres(String codeBarres) {
+        String selectQuery = "SELECT * FROM operations WHERE code_barres = ? ORDER BY DateOperation DESC LIMIT 1";
+    
+        try (Connection conn = getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement(selectQuery)) {
+    
+            preparedStatement.setString(1, codeBarres);
+            ResultSet resultSet = preparedStatement.executeQuery();
+    
+            if (resultSet.next()) {
+                String userId = resultSet.getString("User_Id");
+                String date = resultSet.getString("DateOperation");
+                String operationType = resultSet.getString("TypeOperation");
+                String location = resultSet.getString("Location");
+    
+                if ("entrée".equalsIgnoreCase(operationType)) {
+                    System.out.println("Entered " + location);
+                } else if ("sortie".equalsIgnoreCase(operationType)) {
+                    System.out.println("Has left " + location);
+                } else {
+                    System.out.println("Unknown operation type: " + operationType);
+                }
+            } else {
+                System.out.println("No operations found for code_barres: " + codeBarres);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void insertData(String operationType, String barcode, String location) {
+        String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
+
+        try (Connection connection = getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
+            
+            int userId = UserSession.getInstance().getMatricule(); // Assuming getUsername() returns the matricule as int
+            preparedStatement.setInt(1, userId);
+            preparedStatement.setObject(2, LocalDateTime.now());
+            preparedStatement.setString(3, operationType);
+            preparedStatement.setString(4, barcode);
+            preparedStatement.setString(5, location);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+            System.out.println("Rows inserted: " + rowsAffected);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
 }

@@ -1,17 +1,14 @@
 public class UserSession {
     private static UserSession instance;
-    private String username;
-   
+    private int matricule;
 
-    UserSession(String username) {
-        this.username = username;
-        
-
+    UserSession(int matricule) {
+        this.matricule = matricule;
     }
 
-    public static UserSession getInstance(String username) {
+    public static UserSession getInstance(int matricule) {
         if (instance == null) {
-            instance = new UserSession(username);
+            instance = new UserSession(matricule);
         }
         return instance;
     }
@@ -19,15 +16,12 @@ public class UserSession {
     public static UserSession getInstance() {
         return instance;
     }
-
-    public String getUsername() {
-        return username;
+    
+    public int getMatricule() {
+        return matricule;
     }
-    /*public String getprofil() {
-        return profil;
-    }*/
+
     public void clearSession() {
         instance = null;
     }
-    
 }

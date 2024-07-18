@@ -4,16 +4,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class UserService {
-    public boolean authenticateUser(String username, String password) {
+    public boolean authenticateUser(int matricule, String password) {
         try (Connection conn = MySQLConnection.getConnection()) {
-            String sql = "SELECT motdepasse FROM User WHERE nom = ?";
+            String sql = "SELECT motdepasse FROM User WHERE matricule = ?";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, username);
+                stmt.setInt(1, matricule);
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         String storedHashedPassword = rs.getString("motdepasse");
                         if (PasswordUtil.checkPassword(password, storedHashedPassword)) {
-                            new UserSession(username); // Initialize the session with the username
+                            UserSession.getInstance(matricule); // Initialize the session with the matricule
                             return true;
                         }
                     }
@@ -24,7 +24,26 @@ public class UserService {
         }
         return false;
     }
-    public String getUsername(UserSession session) {
-        return session.getUsername();
+
+
+    public String getUserProfile(int matricule) {
+        try (Connection conn = MySQLConnection.getConnection()) {
+            String sql = "SELECT profil FROM User WHERE matricule = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, matricule);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getString("profil");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
+
+
+
+    
