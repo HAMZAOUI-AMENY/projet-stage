@@ -1,34 +1,58 @@
-package com.example.barcodeapp.service;
+import java.sql.*;
 
-import com.example.barcodeapp.model.Operation;
-import com.example.barcodeapp.repository.OperationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Service
 public class OperationService {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/evenements";
+    private static final String USER = "root";
+    private static final String PASSWORD = "Mysql24";
 
-    @Autowired
-    private OperationRepository operationRepository;
-
-    public Operation saveOperation(String userId, String typeOperation, String barcode, String location) {
-        Operation operation = new Operation();
-        operation.setUserId(userId);
-        operation.setOperationType(typeOperation);
-        operation.setBarcode(barcode);
-        operation.setLocation(location);
-        operation.setDate(LocalDateTime.now());
-        return operationRepository.save(operation);
+    public void addOperation(String location, String operationType, String barcode) throws SQLException {
+        String query = "INSERT INTO operations (location, typeOperation, code_barres) VALUES (?, ?, ?)";
+        try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, location);
+            stmt.setString(2, operationType);
+            stmt.setString(3, barcode);
+            stmt.executeUpdate();
+        }
     }
 
-    public Operation getOperationByBarcode(String barcode) {
-        return operationRepository.findByBarcode(barcode);
+    public String getAllOperations() throws SQLException {
+        StringBuilder response = new StringBuilder();
+        String query = "SELECT * FROM operations";
+        
+        try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            
+            while (rs.next()) {
+                response.append("Operation ID: ").append(rs.getInt("User_ID"))
+                        .append(", Location: ").append(rs.getString("location"))
+                        .append(", Type: ").append(rs.getString("typeOperation"))
+                        .append(", Barcode: ").append(rs.getString("code_barres"))
+                        .append("\n");
+            }
+        }
+        
+        return response.toString();
     }
+   
 
-    public List<Operation> getAllOperations() {
-        return operationRepository.findAll();
+    public String searchOperation(String barcode) throws SQLException {
+        StringBuilder response = new StringBuilder();
+        String query = "SELECT * FROM operations WHERE code_barres = ?";
+        try (Connection connection = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, barcode);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    response.append("Operation ID: ").append(rs.getInt("User_ID"))
+                            .append(", Location: ").append(rs.getString("location"))
+                            .append(", Type: ").append(rs.getString("typeOperation"))
+                            .append(", Barcode: ").append(rs.getString("code_barres"))
+                            .append("\n");
+                }
+            }
+        }
+        return response.toString();
     }
 }

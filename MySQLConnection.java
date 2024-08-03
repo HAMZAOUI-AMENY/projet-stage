@@ -69,7 +69,7 @@ public class MySQLConnection {
         }
     }
     public static void insertData(String operationType, String barcode, String location) {
-        String insertQuery = "INSERT INTO operations (User_Id, DateOperation, TypeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
+        String insertQuery = "INSERT INTO operations (User_Id, dateOperation, typeOperation, code_barres, Location) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
